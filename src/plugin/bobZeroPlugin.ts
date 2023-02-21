@@ -5,7 +5,9 @@ import fetch from 'node-fetch'
 
 const logger = createLogger('unchained:core-payment:bob-zero')
 
-const { BOB_ZERO_API_SECRET } = process.env
+const { BOB_ZERO_CLIENT_CONTEXT, BOB_ZERO_API_ENDPOINT, BOB_ZERO_API_KEY } = process.env
+
+const BASE_URL = `${BOB_ZERO_API_ENDPOINT}/BobFinancingFacadeOnboarding`
 
 const createFinancingSession = async (params: {
   amount: number
@@ -13,11 +15,11 @@ const createFinancingSession = async (params: {
   orderId: string
 }): Promise<string | null> => {
   logger.log('Bob Zero Plugin: Create financing', params)
-  const financing = (await fetch('https://api.bobfinance.com/v1/createFinancing', {
+  const financing = (await fetch(`${BASE_URL}/create_financing?client_ctx=${BOB_ZERO_CLIENT_CONTEXT}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${BOB_ZERO_API_SECRET}`,
+      bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
     },
     body: JSON.stringify({
       order: {
@@ -35,16 +37,16 @@ const createFinancingSession = async (params: {
 
   if (!financing.financing_uid) {
     logger.log('Bob Zero Plugin: Create session', financing)
-    const financingSession = (await fetch('https://api.bobfinance.com/v1/createFinancingSessions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${BOB_ZERO_API_SECRET}`,
+    const financingSession = (await fetch(
+      `${BASE_URL}/create_session?client_ctx=${BOB_ZERO_CLIENT_CONTEXT}&financing_uid=${financing.financing_uid}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
+        },
       },
-      body: JSON.stringify({
-        financing_uid: financing.financing_uid,
-      }),
-    }).then((res) => res.json())) as {
+    ).then((res) => res.json())) as {
       financing_id: number
       financing_uid: string
       financing_session_id: string
@@ -59,7 +61,7 @@ const createFinancingSession = async (params: {
   return null
 }
 
-const BobZero: IPaymentAdapter = {
+export const BobZeroPlugin: IPaymentAdapter = {
   ...PaymentAdapter,
 
   key: 'shop.unchained.payment.bob_zero',
@@ -76,10 +78,8 @@ const BobZero: IPaymentAdapter = {
     const adapterActions = {
       ...PaymentAdapter.actions(params),
 
-      // eslint-disable-next-line
       configurationError() {
-        // eslint-disable-line
-        if (!BOB_ZERO_API_SECRET) {
+        if (!BOB_ZERO_API_KEY || !BOB_ZERO_API_ENDPOINT || !BOB_ZERO_CLIENT_CONTEXT) {
           return PaymentError.INCOMPLETE_CONFIGURATION
         }
         return null
@@ -117,4 +117,4 @@ const BobZero: IPaymentAdapter = {
   },
 }
 
-PaymentDirector.registerAdapter(BobZero)
+PaymentDirector.registerAdapter(BobZeroPlugin)
