@@ -15,10 +15,9 @@ const createFinancingSession = async (params: {
   orderId: string
 }): Promise<string | null> => {
   logger.log('Bob Zero Plugin: Create financing', params)
-  const financing = (await fetch(`${BASE_URL}/create_financing?client_ctx=${BOB_ZERO_CLIENT_CONTEXT}`, {
+  const financing = (await fetch(`${BASE_URL}/create_financing`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
       bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
     },
     body: JSON.stringify({
@@ -29,7 +28,6 @@ const createFinancingSession = async (params: {
       },
       payment: {
         type: 'financing',
-        has_ppi: false,
         duration: 0,
       },
     }),
@@ -38,7 +36,7 @@ const createFinancingSession = async (params: {
   if (!financing.financing_uid) {
     logger.log('Bob Zero Plugin: Create session', financing)
     const financingSession = (await fetch(
-      `${BASE_URL}/create_session?client_ctx=${BOB_ZERO_CLIENT_CONTEXT}&financing_uid=${financing.financing_uid}`,
+      `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
       {
         method: 'POST',
         headers: {
