@@ -1,1 +1,1 @@
-export { BobZeroPlugin } from './plugin/bobZeroPlugin'
+export { BobZeroPlugin } from './plugin/bobZeroPlugin.js'

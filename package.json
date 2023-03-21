@@ -1,12 +1,13 @@
 {
   "name": "unchainedshop-bobzero-plugin",
-  "version": "0.0.1",
+  "version": "0.0.8",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "type": "module",
   "exports": {
+    ".": "./lib/index.js",
     "./*": "./lib/*"
   },
-  "type": "module",
   "scripts": {
     "clean": "rm -rf lib",
     "build": "npm run clean && tsc",
@@ -32,6 +33,10 @@
     "url": "https://github.com/joelmeiller/unchainedshop-bobzero-plugin/issues"
   },
   "homepage": "https://github.com/joelmeiller/unchainedshop-bobzero-plugin#readme",
+  "peerDependencies": {
+    "@accounts/types": "^0.33.2",
+    "@apollo/server": "^4.5.0"
+  },
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/jest": "^29.4.0",
