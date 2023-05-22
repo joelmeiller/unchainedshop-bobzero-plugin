@@ -3,28 +3,18 @@ import { PaymentAdapter, PaymentDirector, PaymentError } from '@unchainedshop/co
 import { log } from '../log.js'
 import fetch from 'node-fetch'
 import { LogLevel } from '@unchainedshop/logger'
-// import { Context } from '@unchainedshop/types/api.js'
+import { BobZeroFinancing, BobZeroSession } from '../types.js'
 
 const { BOB_ZERO_CLIENT_CONTEXT, BOB_ZERO_API_ENDPOINT, BOB_ZERO_API_KEY } = process.env
 
 const BASE_URL = `${BOB_ZERO_API_ENDPOINT}/BobFinancingFacadeOnboarding`
 
-type BobZeroSessionResult = {
-  financing_id: number
-  financing_uid: string
-  financing_session_id: string
-  financing_session_token: string
-  redirect_url: string
-  issued_at: string
-  expires_at: string
-}
-
 const createFinancingSession = async (params: {
   amount: number
   currency: string
   language: string
-  orderId: string
-}): Promise<BobZeroSessionResult | null> => {
+  orderReference: string
+}): Promise<BobZeroSession | null> => {
   log('Bob Zero Plugin: Create financing', params)
   const financing = (await fetch(`${BASE_URL}/create_financing`, {
     method: 'POST',
@@ -33,7 +23,7 @@ const createFinancingSession = async (params: {
     },
     body: JSON.stringify({
       order: {
-        ref: params.orderId,
+        ref: params.orderReference,
         gross_amount: params.amount || 0,
         currency: 'CHF',
       },
@@ -45,7 +35,7 @@ const createFinancingSession = async (params: {
         language: params.language,
       },
     }),
-  }).then((res) => res.json())) as { financing_uid: string }
+  }).then((res) => res.json())) as BobZeroFinancing
 
   if (financing.financing_uid) {
     log('Bob Zero Plugin: Create session', {
@@ -59,68 +49,13 @@ const createFinancingSession = async (params: {
           bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
         },
       },
-    ).then((res) => res.json())) as BobZeroSessionResult
+    ).then((res) => res.json())) as BobZeroSession
 
     return financingSession
   }
 
   return null
 }
-
-// TODO: Add (success) webhook and charge order once the application is confirmed
-// export const bobZeroHandler = async (request, response) => {
-//   const resolvedContext = request.unchainedContext as Context
-//   const { modules } = resolvedContext
-
-//   let financing
-
-//   try {
-//     financing = request.body
-//   } catch (err) {
-//     response.writeHead(400)
-//     response.end(`Webhook Error: ${err.message}`)
-//     return
-//   }
-
-//   try {
-//     if (financing.status === 'OrderConfirmed') {
-//       const orderPaymentId = financing.basket.orderId
-
-//       await modules.orders.payments.logEvent(orderPaymentId, financing)
-
-//       const orderPayment = await modules.orders.payments.findOrderPayment({
-//         orderPaymentId,
-//       })
-
-//       const order = await modules.orders.checkout(
-//         orderPayment.orderId,
-//         {
-//           transactionContext: {
-//             financingId: financing.id,
-//           },
-//           paymentContext: {
-//             financingId: financing.id,
-//           },
-//         },
-//         resolvedContext,
-//       )
-
-//       logger.info(`BobZero Webhook: Unchained confirmed checkout for order ${order.orderNumber}`, {
-//         orderId: order._id,
-//       })
-//     } else {
-//       response.writeHead(404)
-//       response.end()
-//       return
-//     }
-//   } catch (err) {
-//     response.writeHead(400)
-//     response.end(`Webhook Error: ${err.message}`)
-//     return
-//   }
-//   // Return a 200 response to acknowledge receipt of the event
-//   response.end(JSON.stringify({ received: true }))
-// }
 
 export const BobZeroPlugin: IPaymentAdapter = {
   ...PaymentAdapter,
@@ -166,7 +101,7 @@ export const BobZeroPlugin: IPaymentAdapter = {
             amount,
             currency,
             language: transactionContext.language,
-            orderId: order._id,
+            orderReference: orderPayment._id,
           })
 
           if (!session) throw new Error('Bob Zero Plugin: Failed to create session')
