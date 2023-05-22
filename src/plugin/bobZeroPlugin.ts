@@ -36,7 +36,10 @@ const createFinancingSession = async (params: {
   log('Bob Zero Plugin -> Financing', financing)
 
   if (!financing.financing_uid) {
-    log('Bob Zero Plugin: Create session', financing)
+    log(
+      'Bob Zero Plugin: Create session',
+      { url: `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}` },
+    )
     const financingSession = (await fetch(
       `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
       {
