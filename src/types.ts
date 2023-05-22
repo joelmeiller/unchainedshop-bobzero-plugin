@@ -8,9 +8,16 @@ export type BobZeroSession = {
   expires_at: string
 }
 
+export enum BobZeroStatus {
+  WebhookLinkForIdVerification = 'WebhookLinkForIdVerification',
+  WebhookIDVerificationCompleted = 'WebhookIDVerificationCompleted',
+  WebhookPaymentPlanConfirmed = 'WebhookPaymentPlanConfirmed',
+  WebhookSuccessfulFinancing = 'WebhookSuccessfulFinancing',
+} 
+
 export type BobZeroFinancing = {
   status: {
-    ext_status: string
+    ext_status: BobZeroStatus
     ext_error_code: string
     link_id_verification: null | string
     link_contract_signing: null | string

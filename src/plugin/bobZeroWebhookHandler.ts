@@ -1,6 +1,6 @@
 import { Context } from '@unchainedshop/types/api.js'
 import { log } from '../log.js'
-import { BobZeroFinancing } from '../types.js'
+import { BobZeroFinancing, BobZeroStatus } from '../types.js'
 
 // TODO: Add (success) webhook and charge order once the application is confirmed
 export const BobZeroWebhookHandler = async (request, response) => {
@@ -18,7 +18,7 @@ export const BobZeroWebhookHandler = async (request, response) => {
   }
 
   try {
-    if (financing.status.ext_status === 'WebhookSuccessfulFinancing') {
+    if (financing.status.ext_status === BobZeroStatus.WebhookSuccessfulFinancing) {
       const orderPaymentId = financing.order.ref
 
       await modules.orders.payments.logEvent(orderPaymentId, financing)

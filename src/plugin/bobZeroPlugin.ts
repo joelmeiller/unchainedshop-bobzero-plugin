@@ -4,6 +4,7 @@ import { log } from '../log.js'
 import fetch from 'node-fetch'
 import { LogLevel } from '@unchainedshop/logger'
 import { BobZeroFinancing, BobZeroSession } from '../types.js'
+import { Order } from '@unchainedshop/types/orders.js'
 
 const { BOB_ZERO_CLIENT_CONTEXT, BOB_ZERO_API_ENDPOINT, BOB_ZERO_API_KEY } = process.env
 
@@ -14,6 +15,7 @@ const createFinancingSession = async (params: {
   currency: string
   language: string
   orderReference: string
+  order: Order
 }): Promise<BobZeroSession | null> => {
   log('Bob Zero Plugin: Create financing', params)
   const financing = (await fetch(`${BASE_URL}/create_financing`, {
@@ -31,8 +33,30 @@ const createFinancingSession = async (params: {
         type: 'financing',
         duration: 0,
       },
+      sale: {
+        webshop_return_url: 'https://www.unchained.shop/review',
+      },
       customer: {
         language: params.language,
+        firstname: params.order.billingAddress?.firstName || null,
+        lastname: params.order.billingAddress?.lastName || null,
+        email: params.order.contact?.emailAddress,
+        phone: null,
+        nationality: null,
+        addresses: params.order.billingAddress
+          ? [
+              {
+                type: 'actual',
+                street: params.order.billingAddress.addressLine,
+                house_nr: null,
+                city: params.order.billingAddress.city,
+                zip: params.order.billingAddress.postalCode,
+                region: null,
+                country: params.order.billingAddress.countryCode,
+                country3: null,
+              },
+            ]
+          : [],
       },
     }),
   }).then((res) => res.json())) as BobZeroFinancing
@@ -102,6 +126,7 @@ export const BobZeroPlugin: IPaymentAdapter = {
             currency,
             language: transactionContext.language,
             orderReference: orderPayment._id,
+            order,
           })
 
           if (!session) throw new Error('Bob Zero Plugin: Failed to create session')
