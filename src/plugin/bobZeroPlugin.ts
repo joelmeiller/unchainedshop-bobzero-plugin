@@ -40,9 +40,8 @@ const createFinancingSession = async (params: {
     const financingSession = (await fetch(
       `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
       {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
         },
       },
