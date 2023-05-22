@@ -9,11 +9,22 @@ const { BOB_ZERO_CLIENT_CONTEXT, BOB_ZERO_API_ENDPOINT, BOB_ZERO_API_KEY } = pro
 
 const BASE_URL = `${BOB_ZERO_API_ENDPOINT}/BobFinancingFacadeOnboarding`
 
+type BobZeroSessionResult = {
+  financing_id: number
+  financing_uid: string
+  financing_session_id: string
+  financing_session_token: string
+  redirect_url: string
+  issued_at: string
+  expires_at: string
+}
+
 const createFinancingSession = async (params: {
   amount: number
   currency: string
+  language: string
   orderId: string
-}): Promise<string | null> => {
+}): Promise<BobZeroSessionResult | null> => {
   log('Bob Zero Plugin: Create financing', params)
   const financing = (await fetch(`${BASE_URL}/create_financing`, {
     method: 'POST',
@@ -30,16 +41,16 @@ const createFinancingSession = async (params: {
         type: 'financing',
         duration: 0,
       },
+      customer: {
+        language: params.language,
+      },
     }),
   }).then((res) => res.json())) as { financing_uid: string }
 
-  log('Bob Zero Plugin -> Financing', financing)
-
   if (financing.financing_uid) {
-    log(
-      'Bob Zero Plugin: Create session',
-      { url: `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}` },
-    )
+    log('Bob Zero Plugin: Create session', {
+      url: `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
+    })
     const financingSession = (await fetch(
       `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
       {
@@ -48,18 +59,9 @@ const createFinancingSession = async (params: {
           bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
         },
       },
-    ).then((res) => res.json())) as {
-      financing_id: number
-      financing_uid: string
-      financing_session_id: string
-      financing_session_token: string
-      issued_at: string
-      expires_at: string
-    }
+    ).then((res) => res.json())) as BobZeroSessionResult
 
-    log('Bob Zero Plugin -> Session', financingSession)
-
-    return financingSession.financing_session_token
+    return financingSession
   }
 
   return null
@@ -153,19 +155,23 @@ export const BobZeroPlugin: IPaymentAdapter = {
         return false
       },
 
-      sign: async (transactionContext = {}) => {
+      sign: async (transactionContext = { language: 'de' }) => {
         try {
           log('Bob Zero Plugin: Sign', transactionContext)
           const { order, orderPayment } = params.paymentContext
           const pricing = modules.orders.pricingSheet(order)
           const { currency, amount } = pricing.total({ useNetPrice: false })
 
-          log('--> VALUES', { currency, amount, order })
-          const session = await createFinancingSession({ currency, amount, orderId: order._id })
+          const session = await createFinancingSession({
+            amount,
+            currency,
+            language: transactionContext.language,
+            orderId: order._id,
+          })
 
           if (!session) throw new Error('Bob Zero Plugin: Failed to create session')
 
-          return session
+          return JSON.stringify(session)
         } catch (e) {
           log('Bob Zero Plugin: Failed', { level: LogLevel.Warning, e })
           throw new Error(e)
