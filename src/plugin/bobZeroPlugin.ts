@@ -33,6 +33,8 @@ const createFinancingSession = async (params: {
     }),
   }).then((res) => res.json())) as { financing_uid: string }
 
+  log('Bob Zero Plugin -> Financing', financing)
+
   if (!financing.financing_uid) {
     log('Bob Zero Plugin: Create session', financing)
     const financingSession = (await fetch(
@@ -52,6 +54,8 @@ const createFinancingSession = async (params: {
       issued_at: string
       expires_at: string
     }
+
+    log('Bob Zero Plugin -> Session', financingSession)
 
     return financingSession.financing_session_token
   }
