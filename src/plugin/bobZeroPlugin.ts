@@ -17,8 +17,9 @@ const createFinancingSession = async (params: {
   amount: number
   currency: string
   language: string
-  orderReference: string
   order: Order
+  orderReference: string
+  redirectUrl?: string
 }): Promise<BobZeroSession | null> => {
   log('Bob Zero Plugin: Create financing', params)
 
@@ -33,7 +34,7 @@ const createFinancingSession = async (params: {
       duration: 0,
     },
     sale: {
-      webshop_return_url: 'https://www.unchained.shop/review',
+      webshop_return_url: params.redirectUrl,
     },
     customer: {
       language: params.language,
@@ -118,7 +119,7 @@ export const BobZeroPlugin: IPaymentAdapter = {
         return false
       },
 
-      sign: async (transactionContext = { language: 'de' }) => {
+      sign: async (transactionContext = { language: 'de', redirectUrl: null }) => {
         try {
           log('Bob Zero Plugin: Sign', transactionContext)
           const { order, orderPayment } = params.paymentContext
@@ -131,6 +132,7 @@ export const BobZeroPlugin: IPaymentAdapter = {
             language: transactionContext.language,
             orderReference: orderPayment._id,
             order,
+            redirectUrl: transactionContext.redirectUrl,
           })
 
           if (!session) throw new Error('Bob Zero Plugin: Failed to create session')
