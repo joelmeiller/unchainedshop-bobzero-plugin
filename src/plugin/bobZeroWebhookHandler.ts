@@ -1,13 +1,15 @@
 import { Context } from '@unchainedshop/types/api.js'
 import { log } from '../log.js'
 import { BobZeroFinancing, BobZeroStatus } from '../types.js'
+import { LogLevel } from '@unchainedshop/logger'
 
 const { BOB_ZERO_WEBHOOK_KEY } = process.env
 
 export const BobZeroWebhookHandler = async (request, response) => {
-  // Check header  
+  // Check header
   const Authorization = request.headers['Authorization']
   if (Authorization !== `Basic ${BOB_ZERO_WEBHOOK_KEY}`) {
+    log('Unauthorized webhook request', { level: LogLevel.Error, Authorization })
     response.writeHead(401)
     response.end(`Request not authorized`)
     return
@@ -19,17 +21,10 @@ export const BobZeroWebhookHandler = async (request, response) => {
 
   let financing: BobZeroFinancing | null = null
 
-  // Get financing from bob zero request
+  // Update order payment
   try {
     financing = request.body as BobZeroFinancing
-  } catch (err) {
-    response.writeHead(400)
-    response.end(`Webhook Error: ${err.message}`)
-    return
-  }
 
-  // Update order payment 
-  try {
     if (financing.status.ext_status === BobZeroStatus.WebhookSuccessfulFinancing) {
       const orderPaymentId = financing.order.ref
 
@@ -57,9 +52,11 @@ export const BobZeroWebhookHandler = async (request, response) => {
       })
     }
     // TODO: Add failure webhook and others
-  } catch (err) {
+  } catch (error) {
+    log('Webhook request error', { level: LogLevel.Error, error })
+
     response.writeHead(400)
-    response.end(`Webhook Error: ${err.message}`)
+    response.end(`Webhook Error: ${error.message}`)
     return
   }
   // Return a 200 response to acknowledge receipt of the event
