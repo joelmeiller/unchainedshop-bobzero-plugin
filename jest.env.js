@@ -1,0 +1,1 @@
+process.env.BOB_ZERO_WEBHOOK_KEY = 'test-webhook-key-1234'

@@ -13,4 +13,5 @@ export default {
       },
     ],
   },
+  setupFilesAfterEnv: ['./jest.env.js'],
 }

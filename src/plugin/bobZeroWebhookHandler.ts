@@ -5,8 +5,8 @@ import { BobZeroFinancing, BobZeroStatus } from '../types.js'
 const { BOB_ZERO_WEBHOOK_KEY } = process.env
 
 export const BobZeroWebhookHandler = async (request, response) => {
-  // Check header
-  const { Authorization } = request.headers
+  // Check header  
+  const Authorization = request.headers['Authorization']
   if (Authorization !== `Basic ${BOB_ZERO_WEBHOOK_KEY}`) {
     response.writeHead(401)
     response.end(`Request not authorized`)

@@ -2,11 +2,11 @@ import { assert } from 'chai'
 import sinon from 'sinon'
 
 import { BobZeroWebhookHandler } from '../lib/index'
-import { BobZeroFinancing } from '../lib/types'
+import { BobZeroFinancing, BobZeroStatus } from '../lib/types'
 
 const DefaultFinancing: BobZeroFinancing = {
   status: {
-    ext_status: 'WebhookSuccessfulFinancing',
+    ext_status: BobZeroStatus.WebhookSuccessfulFinancing,
     ext_error_code: 'None',
     link_id_verification: null,
     link_contract_signing: null,
@@ -82,6 +82,9 @@ const checkout = sinon.stub().resolves({
 })
 
 const DefaultReq = {
+  headers: {
+    Authorization: 'Basic test-webhook-key-1234',
+  },
   unchainedContext: {
     modules: {
       orders: {
@@ -158,8 +161,30 @@ describe('BobZeroWebhookHandler', () => {
 
     assert.isTrue(DefaultRes.end.calledOnce)
     assert.isTrue(DefaultRes.end.calledWith(JSON.stringify({ received: true })))
-
+  
     assert.isTrue(findOrderPayment.notCalled, 'findOrderPayment not called')
     assert.isTrue(checkout.notCalled, 'order checkout not called')
+  })
+
+  it('not authorized', async () => {
+    const req = {
+      ...DefaultReq,
+      headers: {
+        Authorization: 'Basic invalid-test-webhook-key-9999',
+      },
+      body: {
+        ...DefaultFinancing,
+        status: {
+          ...DefaultFinancing.status,
+          ext_status: 'Unknown',
+        },
+      },
+    }
+    
+    await BobZeroWebhookHandler(req, DefaultRes)
+
+    assert.isTrue(DefaultRes.end.calledOnce)
+    assert.isTrue(DefaultRes.writeHead.calledWith(401))
+    assert.isTrue(DefaultRes.end.calledWith('Request not authorized'))
   })
 })
