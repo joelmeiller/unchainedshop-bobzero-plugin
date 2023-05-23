@@ -8,7 +8,10 @@ import { Order } from '@unchainedshop/types/orders.js'
 
 const { BOB_ZERO_CLIENT_CONTEXT, BOB_ZERO_API_ENDPOINT, BOB_ZERO_API_KEY } = process.env
 
-const BASE_URL = `${BOB_ZERO_API_ENDPOINT}/BobFinancingFacadeOnboarding`
+const BOB_ZERO_API_BASE_URL = `${BOB_ZERO_API_ENDPOINT}/BobFinancingFacadeOnboarding`
+const BOB_ZERO_API_HEADERS = {
+  bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
+}
 
 const createFinancingSession = async (params: {
   amount: number
@@ -18,60 +21,61 @@ const createFinancingSession = async (params: {
   order: Order
 }): Promise<BobZeroSession | null> => {
   log('Bob Zero Plugin: Create financing', params)
-  const financing = (await fetch(`${BASE_URL}/create_financing`, {
-    method: 'POST',
-    headers: {
-      bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
+
+  const body = {
+    order: {
+      ref: params.orderReference,
+      gross_amount: params.amount || 0,
+      currency: 'CHF',
     },
-    body: JSON.stringify({
-      order: {
-        ref: params.orderReference,
-        gross_amount: params.amount || 0,
-        currency: 'CHF',
-      },
-      payment: {
-        type: 'financing',
-        duration: 0,
-      },
-      sale: {
-        webshop_return_url: 'https://www.unchained.shop/review',
-      },
-      customer: {
-        language: params.language,
-        firstname: params.order.billingAddress?.firstName || null,
-        lastname: params.order.billingAddress?.lastName || null,
-        email: params.order.contact?.emailAddress,
-        phone: null,
-        nationality: null,
-        addresses: params.order.billingAddress
-          ? [
-              {
-                type: 'actual',
-                street: params.order.billingAddress.addressLine,
-                house_nr: null,
-                city: params.order.billingAddress.city,
-                zip: params.order.billingAddress.postalCode,
-                region: null,
-                country: params.order.billingAddress.countryCode,
-                country3: null,
-              },
-            ]
-          : [],
-      },
-    }),
+    payment: {
+      type: 'financing',
+      duration: 0,
+    },
+    sale: {
+      webshop_return_url: 'https://www.unchained.shop/review',
+    },
+    customer: {
+      language: params.language,
+      firstname: params.order.billingAddress?.firstName || null,
+      lastname: params.order.billingAddress?.lastName || null,
+      email: params.order.contact?.emailAddress,
+      phone: null,
+      nationality: null,
+      addresses: params.order.billingAddress
+        ? [
+            {
+              type: 'actual',
+              street: params.order.billingAddress.addressLine,
+              house_nr: null,
+              city: params.order.billingAddress.city,
+              zip: params.order.billingAddress.postalCode,
+              region: null,
+              country: params.order.billingAddress.countryCode,
+              country3: null,
+            },
+          ]
+        : [],
+    },
+  }
+
+  log('Bob Zero Financing -> Body', body)
+
+  const financing = (await fetch(`${BOB_ZERO_API_BASE_URL}/create_financing`, {
+    method: 'POST',
+    headers: BOB_ZERO_API_HEADERS,
+    body: JSON.stringify(body),
   }).then((res) => res.json())) as BobZeroFinancing
 
   if (financing.financing_uid) {
     log('Bob Zero Plugin: Create session', {
-      url: `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
+      url: `${BOB_ZERO_API_BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
     })
     const financingSession = (await fetch(
-      `${BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
+      `${BOB_ZERO_API_BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
       {
         method: 'GET',
-        headers: {
-          bobFinanceSuiteApiKey: `${BOB_ZERO_API_KEY}`,
-        },
+        headers: BOB_ZERO_API_HEADERS,
       },
     ).then((res) => res.json())) as BobZeroSession
 
