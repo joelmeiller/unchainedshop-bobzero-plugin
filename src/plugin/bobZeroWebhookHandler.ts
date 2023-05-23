@@ -2,13 +2,24 @@ import { Context } from '@unchainedshop/types/api.js'
 import { log } from '../log.js'
 import { BobZeroFinancing, BobZeroStatus } from '../types.js'
 
-// TODO: Add (success) webhook and charge order once the application is confirmed
+const { BOB_ZERO_WEBHOOK_KEY } = process.env
+
 export const BobZeroWebhookHandler = async (request, response) => {
+  // Check header
+  const { Authorization } = request.headers
+  if (Authorization !== `Basic ${BOB_ZERO_WEBHOOK_KEY}`) {
+    response.writeHead(401)
+    response.end(`Request not authorized`)
+    return
+  }
+
+  // Get Unchained context
   const resolvedContext = request.unchainedContext as Context
   const { modules } = resolvedContext
 
   let financing: BobZeroFinancing | null = null
 
+  // Get financing from bob zero request
   try {
     financing = request.body as BobZeroFinancing
   } catch (err) {
@@ -17,6 +28,7 @@ export const BobZeroWebhookHandler = async (request, response) => {
     return
   }
 
+  // Update order payment 
   try {
     if (financing.status.ext_status === BobZeroStatus.WebhookSuccessfulFinancing) {
       const orderPaymentId = financing.order.ref
