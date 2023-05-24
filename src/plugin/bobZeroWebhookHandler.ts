@@ -8,7 +8,6 @@ const { BOB_ZERO_WEBHOOK_KEY } = process.env
 export const BobZeroWebhookHandler = async (request, response) => {
   // Check header
   const authorizationHeader = request.headers['authorization']
-  log('REQUEST', { headers: request['headers'], authorizationHeader, method: request.method })
   if (request.method === 'POST' && authorizationHeader) {
     if (authorizationHeader !== `Basic ${BOB_ZERO_WEBHOOK_KEY}`) {
       log('Unauthorized webhook request', { level: LogLevel.Error, authorizationHeader })
@@ -39,9 +38,9 @@ export const BobZeroWebhookHandler = async (request, response) => {
         const order = await modules.orders.checkout(
           orderPayment.orderId,
           {
-            transactionContext: financing,
             paymentContext: {
               transactionId: financing.financing_id,
+              ...financing,
             },
           },
           resolvedContext,
@@ -59,8 +58,6 @@ export const BobZeroWebhookHandler = async (request, response) => {
       response.end(`Webhook Error: ${error.message}`)
       return
     }
-  } else {
-
   }
 
   // Return a 200 response to acknowledge receipt of the event
