@@ -60,8 +60,6 @@ const createFinancingSession = async (params: {
     },
   }
 
-  log('Financing -> Body', body)
-
   const financing = (await fetch(`${BOB_ZERO_API_BASE_URL}/create_financing`, {
     method: 'POST',
     headers: BOB_ZERO_API_HEADERS,
@@ -69,7 +67,7 @@ const createFinancingSession = async (params: {
   }).then((res) => res.json())) as BobZeroFinancing
 
   if (financing.financing_uid) {
-    log('Bob Zero Plugin: Create session', {
+    log('Create session', {
       url: `${BOB_ZERO_API_BASE_URL}/create_session?financing_uid=${financing.financing_uid}`,
     })
     const financingSession = (await fetch(
@@ -89,8 +87,6 @@ const createFinancingSession = async (params: {
 const checkIsPaid = (order: Order, orderModule: OrdersModule, financing: BobZeroFinancing): boolean => {
   const pricing = orderModule.pricingSheet(order)
   const totalAmount = pricing.total({ useNetPrice: false }).amount
-
-  log('Check is paid', { financingAmount: financing.order.gross_amount, totalAmount,  })
   return (
     financing.order.gross_amount && financing.order.gross_amount.toFixed(2) === totalAmount.toFixed(2)
   )
@@ -159,9 +155,13 @@ export const BobZeroPlugin: IPaymentAdapter = {
       charge: async (
         transactionContext: BobZeroFinancing | null,
       ): Promise<false | PaymentChargeActionResult> => {
-        log('Charge', transactionContext)
+        const transactionId = transactionContext?.financing_id
+        const orderId = transactionContext?.order.ref
+
+        log('Charge', { transactionId, orderId })
+
         // --> check if session is finished (success or failure)
-        if (!transactionContext?.financing_id) return false
+        if (!transactionId) return false
 
         // --> throw error if payment failed
         if (transactionContext.status.ext_status !== BobZeroStatus.WebhookSuccessfulFinancing)
@@ -173,12 +173,10 @@ export const BobZeroPlugin: IPaymentAdapter = {
 
         // --> checks if order is still valid (amount the same)
         const isPaid = checkIsPaid(order, modules.orders, transactionContext)
-        if (!isPaid) {
-          return false
-        }
+        if (!isPaid) return false
 
         return {
-          transactionId: `${transactionContext.financing_id}`,
+          transactionId: `${transactionId}`,
         }
       },
     }

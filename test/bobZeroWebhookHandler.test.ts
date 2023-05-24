@@ -82,8 +82,9 @@ const checkout = sinon.stub().resolves({
 })
 
 const DefaultReq = {
+  method: 'POST',
   headers: {
-    Authorization: 'Basic test-webhook-key-1234',
+    authorization: 'Basic test-webhook-key-1234',
   },
   unchainedContext: {
     modules: {
@@ -170,7 +171,7 @@ describe('BobZeroWebhookHandler', () => {
     const req = {
       ...DefaultReq,
       headers: {
-        Authorization: 'Basic invalid-test-webhook-key-9999',
+        authorization: 'Basic invalid-test-webhook-key-9999',
       },
       body: {
         ...DefaultFinancing,
