@@ -45,7 +45,7 @@ export const BobZeroWebhookHandler = async (request, response) => {
         resolvedContext,
       )
 
-      log(`BobZero Webhook: Unchained confirmed checkout for order ${order.orderNumber}`, {
+      log(`Unchained confirmed checkout for order ${order.orderNumber} (webhook)`, {
         orderId: order._id,
       })
     }
