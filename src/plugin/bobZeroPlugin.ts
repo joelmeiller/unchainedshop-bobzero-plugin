@@ -3,8 +3,8 @@ import { PaymentAdapter, PaymentDirector, PaymentError } from '@unchainedshop/co
 import { log } from '../log.js'
 import fetch from 'node-fetch'
 import { LogLevel } from '@unchainedshop/logger'
-import { BobZeroFinancing, BobZeroSession } from '../types.js'
-import { Order } from '@unchainedshop/types/orders.js'
+import { BobZeroFinancing, BobZeroSession, BobZeroStatus } from '../types.js'
+import { Order, OrdersModule } from '@unchainedshop/types/orders.js'
 
 const { BOB_ZERO_CLIENT_CONTEXT, BOB_ZERO_API_ENDPOINT, BOB_ZERO_API_KEY } = process.env
 
@@ -21,7 +21,7 @@ const createFinancingSession = async (params: {
   orderReference: string
   redirectUrl?: string
 }): Promise<BobZeroSession | null> => {
-  log('Bob Zero Plugin: Create financing', params)
+  log('Create financing', params)
 
   const body = {
     order: {
@@ -60,7 +60,7 @@ const createFinancingSession = async (params: {
     },
   }
 
-  log('Bob Zero Financing -> Body', body)
+  log('Financing -> Body', body)
 
   const financing = (await fetch(`${BOB_ZERO_API_BASE_URL}/create_financing`, {
     method: 'POST',
@@ -84,6 +84,16 @@ const createFinancingSession = async (params: {
   }
 
   return null
+}
+
+const checkIsPaid = (order: Order, orderModule: OrdersModule, financing: BobZeroFinancing): boolean => {
+  const pricing = orderModule.pricingSheet(order)
+  const totalAmount = pricing.total({ useNetPrice: false }).amount / 100
+
+  log('Check is paid', { financingAmount: financing.order.gross_amount, totalAmount,  })
+  return (
+    financing.order.gross_amount && financing.order.gross_amount.toFixed(2) === totalAmount.toFixed(2)
+  )
 }
 
 export const BobZeroPlugin: IPaymentAdapter = {
@@ -121,7 +131,7 @@ export const BobZeroPlugin: IPaymentAdapter = {
 
       sign: async (transactionContext = { language: 'de', redirectUrl: null }) => {
         try {
-          log('Bob Zero Plugin: Sign', transactionContext)
+          log('Sign', transactionContext)
           const { order, orderPayment } = params.paymentContext
           const pricing = modules.orders.pricingSheet(order)
           const { currency, amount } = pricing.total({ useNetPrice: false })
@@ -139,19 +149,37 @@ export const BobZeroPlugin: IPaymentAdapter = {
 
           return JSON.stringify(session)
         } catch (e) {
-          log('Bob Zero Plugin: Failed', { level: LogLevel.Warning, e })
+          log('Signing failed', { level: LogLevel.Warning, e })
           throw new Error(e)
         }
       },
 
-      charge: async (transactionContext = {}): Promise<false | PaymentChargeActionResult> => {
+      // Return true: order paid
+      // Return false: check cart remains open, no order is created yet
+      charge: async (
+        transactionContext: BobZeroFinancing | null,
+      ): Promise<false | PaymentChargeActionResult> => {
+        log('Charge', transactionContext)
         // --> check if session is finished (success or failure)
+        if (!transactionContext?.financing_id) return false
+
         // --> throw error if payment failed
+        if (transactionContext.status.ext_status !== BobZeroStatus.WebhookSuccessfulFinancing)
+          return false
+
         // --> get order
+        if (!params.paymentContext.order) return false
+        const order = params.paymentContext.order
+
         // --> checks if order is still valid (amount the same)
-        // Return true: order paid
-        // Return false: check cart remains open, no order is created yet
-        return false
+        const isPaid = checkIsPaid(order, modules.orders, transactionContext)
+        if (!isPaid) {
+          return false
+        }
+
+        return {
+          transactionId: `${transactionContext.financing_id}`,
+        }
       },
     }
 

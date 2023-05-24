@@ -1,6 +1,6 @@
 import { createLogger, LogLevel } from '@unchainedshop/logger'
 
-const logger = createLogger('unchained')
+const logger = createLogger('unchained:plugin:bob-zero')
 
 export const log = (message: string | Error, options?: { level?: LogLevel; [x: string]: any }) => {
   if (!options?.level) {

@@ -37,11 +37,9 @@ export const BobZeroWebhookHandler = async (request, response) => {
       const order = await modules.orders.checkout(
         orderPayment.orderId,
         {
-          transactionContext: {
-            financingId: financing.financing_id,
-          },
+          transactionContext: financing,
           paymentContext: {
-            financingId: financing.financing_id,
+            transactionId: financing.financing_id,
           },
         },
         resolvedContext,
