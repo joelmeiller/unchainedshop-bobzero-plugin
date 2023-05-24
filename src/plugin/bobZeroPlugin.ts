@@ -88,7 +88,7 @@ const createFinancingSession = async (params: {
 
 const checkIsPaid = (order: Order, orderModule: OrdersModule, financing: BobZeroFinancing): boolean => {
   const pricing = orderModule.pricingSheet(order)
-  const totalAmount = pricing.total({ useNetPrice: false }).amount / 100
+  const totalAmount = pricing.total({ useNetPrice: false }).amount
 
   log('Check is paid', { financingAmount: financing.order.gross_amount, totalAmount,  })
   return (
