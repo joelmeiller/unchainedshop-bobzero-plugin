@@ -8,7 +8,7 @@ const { BOB_ZERO_WEBHOOK_KEY } = process.env
 export const BobZeroWebhookHandler = async (request, response) => {
   // Check header
   const authorizationHeader = request.headers['Authorization']
-  log('REQUEST', { request, authorizationHeader })
+  log('REQUEST', { headers: request['headers'], authorizationHeader, body: request.body })
   if (request.method === 'POST' && authorizationHeader) {
     if (authorizationHeader !== `Basic ${BOB_ZERO_WEBHOOK_KEY}`) {
       log('Unauthorized webhook request', { level: LogLevel.Error, authorizationHeader })
