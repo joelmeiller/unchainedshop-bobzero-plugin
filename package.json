@@ -12,6 +12,7 @@
     "clean": "rm -rf lib",
     "build": "npm run clean && tsc",
     "watch": "tsc -w",
+    "publish:patch": "npm run build && npm version patch && npm publish",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles --forceExit test/**",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch --detectOpenHandles --forceExit test/**"
   },
