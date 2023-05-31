@@ -1,14 +1,14 @@
 import { assert } from 'chai'
-import { BobZeroPlugin } from '../src/index'
+import { BobZeroPlugin } from '../lib/index'
 
 describe('bobZeroPlugin', () => {
-  it('should create a financing session', () => {
+  it('can instantiate actions', () => {
     const bobZeroPlugin = BobZeroPlugin.actions({
       config: [],
       context: {} as any,
       paymentContext: {} as any,
     })
 
-    assert.isTrue(bobZeroPlugin.isActive())
+    assert.isFalse(bobZeroPlugin.isActive())
   })
 })

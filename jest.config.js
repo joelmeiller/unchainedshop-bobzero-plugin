@@ -2,17 +2,16 @@ export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
   extensionsToTreatAsEsm: ['.ts'],
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
   transform: {
-    '^.+\\.jsx?$': 'babel-jest',
-    '^.+\\.ts?$': 'ts-jest',
-    '^.+\\.tsx?$': [
+    '^.+\\.ts?$': [
       'ts-jest',
       {
         useESM: true,
       },
     ],
   },
-  // moduleNameMapper: {
-  //   '(.+)\\.js': '$1',
-  // },
+  setupFilesAfterEnv: ['./jest.env.js'],
 }
