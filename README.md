@@ -13,7 +13,7 @@ The following values need be set as ENV variables in your unchained engine.
 | BOB_ZERO_API_KEY | The api key that has will be passed as bob zero specific header _bobFinanceSuiteApiKey_ when calling the endpoints. Our specific key can be found in the bob partner dashboard |
 | BOB_ZERO_WEBHOOK_KEY | The authorization header that is set for all incoming webhooks from bob zero. The plugin checks for a correct authorization header before processing the webhook call. Our specific key can be found in the bob partner dashboard. |
 
-## Add webhook handler 
+### Add webhook handler 
 
 Add the marked code to the _boot.ts_ file of your engine.
 
@@ -56,3 +56,5 @@ const start = async () => {
   connectDefaultPluginsToExpress4(app, engine)
 
 ```
+
+That's it. You are good to go! 🚀
